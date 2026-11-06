@@ -24,6 +24,7 @@
                 <div class="flex gap-2">
                     <button onclick="exportData()" title="Export Habits (Backup)" class="bg-indigo-700/60 hover:bg-indigo-700 p-2 rounded-lg text-xs transition">
                         <i class="fa-solid fa-download"></i>
+                        
                     </button>
                     <button onclick="document.getElementById('import-file').click()" title="Import Habits (Restore)" class="bg-indigo-700/60 hover:bg-indigo-700 p-2 rounded-lg text-xs transition">
                         <i class="fa-solid fa-upload"></i>
@@ -270,3 +271,28 @@
     </script>
 </body>
 </html>
+
+// Play a satisfying pop/chime sound using Web Audio API
+function playPopSound() {
+    try {
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        
+        osc.type = 'sine';
+        // Pitch jump from D5 to A5 for a pleasant "ding"
+        osc.frequency.setValueAtTime(587.33, audioCtx.currentTime); 
+        osc.frequency.exponentialRampToValueAtTime(880, audioCtx.currentTime + 0.12); 
+        
+        gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.15);
+        
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.15);
+    } catch (e) {
+        // Fallback or ignore if browser audio context isn't allowed yet
+    }
+}
