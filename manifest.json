@@ -1,0 +1,21 @@
+{
+  "name": "Streakify - Habit Tracker",
+  "short_name": "Streakify",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#4f46e5",
+  "description": "Build better routines and track daily streaks.",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/785/785116.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/785/785116.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
