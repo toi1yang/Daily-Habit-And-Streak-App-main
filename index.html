@@ -125,15 +125,15 @@
             });
         }
 
-        const habitForm = document.getElementById('habit-form');
-        const habitInput = document.getElementById('habit-input');
-        const categoryInput = document.getElementById('category-input');
-        const habitList = document.getElementById('habit-list');
-        const habitCount = document.getElementById('habit-count');
-        const emptyState = document.getElementById('empty-state');
-        const progressBar = document.getElementById('progress-bar');
-        const progressText = document.getElementById('progress-text');
-        const dailyQuote = document.getElementById('daily-quote');
+        const habitForm = getEl('habit-form');
+const habitInput = getEl('habit-input');
+const categoryInput = getEl('category-input');
+const habitList = getEl('habit-list');
+const habitCount = getEl('habit-count');
+const emptyState = getEl('empty-state');
+const progressBar = getEl('progress-bar');
+const progressText = getEl('progress-text');
+const dailyQuote = getEl('daily-quote');
 
         const quotes = [
             "\"Small steps every day lead to big changes.\"",
