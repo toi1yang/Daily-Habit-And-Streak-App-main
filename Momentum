@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Habit Tracker</title>
+    <!-- Tailwind CSS for modern mobile-first styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col items-center justify-start p-4">
+
+    <!-- App Container -->
+    <div class="w-full max-w-md bg-slate-800 rounded-2xl shadow-xl overflow-hidden border border-slate-700 flex flex-col">
+        
+        <!-- Header -->
+        <header class="bg-gradient-to-r from-indigo-600 to-violet-600 p-6 text-white shadow-md">
+            <h1 class="text-2xl font-bold flex items-center gap-2">
+                <i class="fa-solid fa-fire text-amber-400"></i> HabitTracker
+            </h1>
+            <p class="text-indigo-200 text-sm mt-1">Build better routines, one day at a time.</p>
+        </header>
+
+        <!-- Main Content Area -->
+        <main class="p-6 flex-1 flex flex-col gap-6">
+            
+            <!-- Habit Input Form -->
+            <form id="habit-form" class="flex gap-2">
+                <input 
+                    type="text" 
+                    id="habit-input" 
+                    placeholder="Enter a new habit (e.g., Read 20 mins)..." 
+                    class="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition"
+                    autocomplete="off"
+                    required
+                />
+                <button 
+                    type="submit" 
+                    class="bg-indigo-600 hover:bg-indigo-500 text-white font-medium px-5 py-3 rounded-xl transition flex items-center justify-center shadow-lg shadow-indigo-600/30">
+                    <i class="fa-solid fa-plus"></i>
+                </button>
+            </form>
+
+            <!-- Habits List Section -->
+            <div class="flex flex-col gap-3">
+                <div class="flex justify-between items-center text-xs font-semibold text-slate-400 uppercase tracking-wider px-1">
+                    <span>Your Habits</span>
+                    <span id="habit-count">0 habits</span>
+                </div>
+
+                <!-- Empty State -->
+                <div id="empty-state" class="hidden flex-col items-center justify-center py-10 text-center text-slate-500">
+                    <i class="fa-solid fa-clipboard-list text-4xl mb-2 text-slate-600"></i>
+                    <p class="text-sm">No habits added yet. Start by adding one above!</p>
+                </div>
+
+                <!-- Habits Container -->
+                <ul id="habit-list" class="flex flex-col gap-3">
+                    <!-- Dynamic items inserted here -->
+                </ul>
+            </div>
+
+        </main>
+
+        <!-- Footer / Streak Info -->
+        <footer class="bg-slate-900/50 p-4 border-t border-slate-700 text-center text-xs text-slate-500">
+            Saved securely in your browser's local storage.
+        </footer>
+    </div>
+
+    <!-- JavaScript Application Logic -->
+    <script>
+        // DOM Elements
+        const habitForm = document.getElementById('habit-form');
+        const habitInput = document.getElementById('habit-input');
+        const habitList = document.getElementById('habit-list');
+        const habitCount = document.getElementById('habit-count');
+        const emptyState = document.getElementById('empty-state');
+
+        // State Management (Loaded from LocalStorage)
+        let habits = JSON.parse(localStorage.getItem('habits')) || [];
+
+        // Save to LocalStorage and re-render
+        function saveAndRender() {
+            localStorage.setItem('habits', JSON.stringify(habits));
+            renderHabits();
+        }
+
+        // Check if a date string is today
+        function isToday(dateString) {
+            if (!dateString) return false;
+            const today = new Date().toDateString();
+            return new Date(dateString).toDateString() === today;
+        }
+
+        // Render Habits to DOM
+        function renderHabits() {
+            habitList.innerHTML = '';
+            habitCount.textContent = `${habits.length} habit${habits.length === 1 ? '' : 's'}`;
+
+            if (habits.length === 0) {
+                emptyState.classList.remove('hidden');
+                emptyState.classList.add('flex');
+                return;
+            } else {
+                emptyState.classList.remove('flex');
+                emptyState.classList.add('hidden');
+            }
+
+            habits.forEach((habit, index) => {
+                const completedToday = isToday(habit.lastCompleted);
+
+                const li = document.createElement('li');
+                li.className = `flex items-center justify-between p-4 rounded-xl border transition-all ${
+                    completedToday 
+                        ? 'bg-emerald-950/20 border-emerald-800/50' 
+                        : 'bg-slate-900/60 border-slate-700/60 hover:border-slate-600'
+                }`;
+
+                li.innerHTML = `
+                    <div class="flex items-center gap-3 flex-1 min-w-0 mr-3">
+                        <button onclick="toggleComplete(${index})" class="w-7 h-7 rounded-lg flex items-center justify-center border transition ${
+                            completedToday 
+                                ? 'bg-emerald-600 border-emerald-500 text-white shadow-md shadow-emerald-600/30' 
+                                : 'border-slate-600 hover:border-indigo-500 text-transparent'
+                        }">
+                            <i class="fa-solid fa-check text-xs ${completedToday ? 'opacity-100' : 'opacity-0'}"></i>
+                        </button>
+                        <span class="text-sm font-medium truncate ${completedToday ? 'line-through text-slate-400' : 'text-slate-200'}">
+                            ${escapeHtml(habit.name)}
+                        </span>
+                    </div>
+                    
+                    <div class="flex items-center gap-3">
+                        <div class="flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full bg-slate-800 border border-slate-700 text-amber-400" title="Current Streak">
+                            <i class="fa-solid fa-fire"></i>
+                            <span>${habit.streak || 0}</span>
+                        </div>
+                        <button onclick="deleteHabit(${index})" class="text-slate-500 hover:text-rose-400 p-1 transition" title="Delete habit">
+                            <i class="fa-solid fa-trash-can text-sm"></i>
+                        </button>
+                    </div>
+                `;
+                habitList.appendChild(li);
+            });
+        }
+
+        // Add Habit
+        habitForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const habitName = habitInput.value.trim();
+            if (!habitName) return;
+
+            habits.push({
+                name: habitName,
+                streak: 0,
+                lastCompleted: null
+            });
+
+            habitInput.value = '';
+            saveAndRender();
+        });
+
+        // Toggle Completion & Streak Counter
+        window.toggleComplete = function(index) {
+            const habit = habits[index];
+            const todayStr = new Date().toDateString();
+
+            if (isToday(habit.lastCompleted)) {
+                // Already completed today -> uncheck it and decrement streak
+                habit.lastCompleted = null;
+                habit.streak = Math.max(0, habit.streak - 1);
+            } else {
+                // Check it for today -> increment streak
+                habit.lastCompleted = new Date().toISOString();
+                habit.streak += 1;
+            }
+
+            saveAndRender();
+        };
+
+        // Delete Habit
+        window.deleteHabit = function(index) {
+            habits.splice(index, 1);
+            saveAndRender();
+        };
+
+        // Utility to prevent XSS
+        function escapeHtml(str) {
+            return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+        }
+
+        // Initial render on load
+        renderHabits();
+    </script>
+</body>
+</html>
