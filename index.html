@@ -1,479 +1,279 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Streakify - Habit Tracker</title>
-    
-    <!-- PWA Settings -->
-    <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#4f46e5">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="Streakify">
-    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/785/785116.png">
-
-    <!-- Tailwind CSS for modern mobile-first styling -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- FontAwesome for icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Canvas Confetti Library -->
-    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Streakify - Daily Habit & Streak Tracker</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    body { background-color: #0f172a; color: #f8fafc; font-family: system-ui, -apple-system, sans-serif; }
+    .glass { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.1); }
+  </style>
 </head>
-<body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col items-center justify-start p-4">
+<body class="min-h-screen pb-12 flex flex-col items-center p-4 sm:p-6">
 
-    <!-- App Container -->
-    <div class="w-full max-w-md bg-slate-800 rounded-2xl shadow-xl overflow-hidden border border-slate-700 flex flex-col">
-        
-        <!-- Header -->
-        <header class="bg-gradient-to-r from-indigo-600 to-violet-600 p-6 text-white shadow-md">
-            <div class="flex justify-between items-center">
-                <h1 class="text-2xl font-bold flex items-center gap-2">
-                    <i class="fa-solid fa-fire text-amber-400"></i> Streakify
-                </h1>
-                <!-- Data Backup / Restore Buttons -->
-                <div class="flex gap-2">
-                    <button onclick="exportData()" title="Export Habits (Backup)" class="bg-indigo-700/60 hover:bg-indigo-700 p-2 rounded-lg text-xs transition">
-                        <i class="fa-solid fa-download"></i>
-                    </button>
-                    <button onclick="document.getElementById('import-file').click()" title="Import Habits (Restore)" class="bg-indigo-700/60 hover:bg-indigo-700 p-2 rounded-lg text-xs transition">
-                        <i class="fa-solid fa-upload"></i>
-                    </button>
-                    <input type="file" id="import-file" class="hidden" accept=".json" onchange="importData(event)">
-                </div>
-            </div>
-            <p id="daily-quote" class="text-indigo-200 text-xs italic mt-2">"Small steps every day lead to big changes."</p>
-        </header>
+  <!-- Header -->
+  <header class="w-full max-w-lg flex justify-between items-center my-4">
+    <div>
+      <h1 class="text-3xl font-extrabold text-indigo-400 flex items-center gap-2">
+        <i class="fa-solid fa-fire text-amber-500"></i> Streakify
+      </h1>
+      <p class="text-xs text-slate-400 mt-1">Small steps every day lead to big changes.</p>
+    </div>
+    <div class="flex gap-2">
+      <button onclick="exportData()" title="Export Data" class="p-2 bg-slate-800 hover:bg-slate-700 rounded-lg text-slate-300 transition">
+        <i class="fa-solid fa-download"></i>
+      </button>
+      <button onclick="document.getElementById('importFile').click()" title="Import Data" class="p-2 bg-slate-800 hover:bg-slate-700 rounded-lg text-slate-300 transition">
+        <i class="fa-solid fa-upload"></i>
+      </button>
+      <input type="file" id="importFile" class="hidden" accept=".json" onchange="importData(event)">
+    </div>
+  </header>
 
-        <!-- Main Content Area -->
-        <main class="p-6 flex-1 flex flex-col gap-6">
-            
-            <!-- Progress Tracker Bar -->
-            <div id="progress-section" class="bg-slate-900/60 p-4 rounded-xl border border-slate-700/60 flex flex-col gap-2">
-                <div class="flex justify-between items-center text-xs font-semibold text-slate-400">
-                    <span>Today's Progress</span>
-                    <span id="progress-text">0%</span>
-                </div>
-                <div class="w-full bg-slate-800 rounded-full h-2.5 overflow-hidden">
-                    <div id="progress-bar" class="bg-emerald-500 h-2.5 rounded-full transition-all duration-500" style="width: 0%"></div>
-                </div>
-            </div>
+  <main class="w-full max-w-lg space-y-6">
 
-            <!-- Habit Input Form -->
-            <form id="habit-form" class="flex flex-col gap-2.5">
-                <div class="flex gap-2">
-                    <input 
-                        type="text" 
-                        id="habit-input" 
-                        placeholder="Enter a new habit..." 
-                        class="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition"
-                        autocomplete="off"
-                        required
-                    />
-                    <select 
-                        id="category-input"
-                        class="bg-slate-900 border border-slate-700 rounded-xl px-3 py-3 text-xs text-slate-300 focus:outline-none focus:border-indigo-500 transition">
-                        <option value="Health">Health</option>
-                        <option value="Work">Work</option>
-                        <option value="Mind">Mind</option>
-                        <option value="Personal">Personal</option>
-                    </select>
-                </div>
-                <button 
-                    type="submit" 
-                    class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-medium py-3 rounded-xl transition flex items-center justify-center gap-2 shadow-lg shadow-indigo-600/30 text-sm">
-                    <i class="fa-solid fa-plus"></i> Add Habit
-                </button>
-            </form>
-
-            <!-- Category Filter Pills -->
-            <div class="flex gap-1.5 overflow-x-auto pb-1 text-xs">
-                <button onclick="setFilter('All')" id="filter-All" class="filter-btn px-3 py-1.5 rounded-lg font-medium transition bg-indigo-600 text-white">All</button>
-                <button onclick="setFilter('Health')" id="filter-Health" class="filter-btn px-3 py-1.5 rounded-lg font-medium transition bg-slate-900 text-slate-400 hover:text-white border border-slate-700">Health</button>
-                <button onclick="setFilter('Work')" id="filter-Work" class="filter-btn px-3 py-1.5 rounded-lg font-medium transition bg-slate-900 text-slate-400 hover:text-white border border-slate-700">Work</button>
-                <button onclick="setFilter('Mind')" id="filter-Mind" class="filter-btn px-3 py-1.5 rounded-lg font-medium transition bg-slate-900 text-slate-400 hover:text-white border border-slate-700">Mind</button>
-                <button onclick="setFilter('Personal')" id="filter-Personal" class="filter-btn px-3 py-1.5 rounded-lg font-medium transition bg-slate-900 text-slate-400 hover:text-white border border-slate-700">Personal</button>
-            </div>
-
-            <!-- Habits List Section -->
-            <div class="flex flex-col gap-3">
-                <div class="flex justify-between items-center text-xs font-semibold text-slate-400 uppercase tracking-wider px-1">
-                    <span>Habits List</span>
-                    <span id="habit-count">0 habits</span>
-                </div>
-
-                <!-- Empty State -->
-                <div id="empty-state" class="hidden flex-col items-center justify-center py-10 text-center text-slate-500">
-                    <i class="fa-solid fa-clipboard-list text-4xl mb-2 text-slate-600"></i>
-                    <p class="text-sm">No habits found in this category.</p>
-                </div>
-
-                <!-- Habits Container -->
-                <ul id="habit-list" class="flex flex-col gap-3">
-                    <!-- Dynamic items inserted here -->
-                </ul>
-            </div>
-
-        </main>
-
-        <!-- Footer / Streak Info -->
-        <footer class="bg-slate-900/50 p-4 border-t border-slate-700 text-center text-xs text-slate-500">
-            Saved securely in your browser's local storage.
-        </footer>
+    <!-- Progress Card -->
+    <div class="glass p-5 rounded-2xl shadow-xl">
+      <div class="flex justify-between items-center mb-2">
+        <span class="text-sm font-semibold text-slate-300">Today's Progress</span>
+        <span id="progressPercent" class="text-sm font-bold text-indigo-400">0%</span>
+      </div>
+      <div class="w-full bg-slate-800 h-3 rounded-full overflow-hidden">
+        <div id="progressBar" class="bg-indigo-500 h-full w-0 transition-all duration-500 ease-out"></div>
+      </div>
     </div>
 
-    <!-- JavaScript Application Logic -->
-    <script>
-        // Service Worker Registration for PWA
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./sw.js').catch(err => console.log('SW registration failed:', err));
-            });
+    <!-- Input Form -->
+    <form onsubmit="addHabit(event)" class="glass p-4 rounded-2xl flex flex-col sm:flex-row gap-2">
+      <input type="text" id="habitInput" placeholder="Enter a new habit..." required 
+        class="flex-1 bg-slate-900/60 border border-slate-700 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-indigo-500 text-white placeholder-slate-500">
+      
+      <select id="categoryInput" class="bg-slate-900/60 border border-slate-700 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-indigo-500 text-slate-300">
+        <option value="Health">Health</option>
+        <option value="Work">Work</option>
+        <option value="Mind">Mind</option>
+        <option value="Personal">Personal</option>
+      </select>
+
+      <button type="submit" class="bg-indigo-600 hover:bg-indigo-500 text-white font-medium px-5 py-2.5 rounded-xl transition text-sm flex items-center justify-center gap-2">
+        <i class="fa-solid fa-plus"></i> Add
+      </button>
+    </form>
+
+    <!-- Filter Pills -->
+    <div class="flex gap-2 overflow-x-auto pb-1" id="filterContainer">
+      <button onclick="setFilter('All')" class="filter-btn active-filter px-3 py-1.5 rounded-lg text-xs font-semibold bg-indigo-600 text-white">All</button>
+      <button onclick="setFilter('Health')" class="filter-btn px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 text-slate-400 hover:bg-slate-700">Health</button>
+      <button onclick="setFilter('Work')" class="filter-btn px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 text-slate-400 hover:bg-slate-700">Work</button>
+      <button onclick="setFilter('Mind')" class="filter-btn px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 text-slate-400 hover:bg-slate-700">Mind</button>
+      <button onclick="setFilter('Personal')" class="filter-btn px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 text-slate-400 hover:bg-slate-700">Personal</button>
+    </div>
+
+    <!-- Habit List -->
+    <div id="habitList" class="space-y-3">
+      <!-- Dynamic habits load here -->
+    </div>
+
+  </main>
+
+  <script>
+    let habits = JSON.parse(localStorage.getItem('streakify_habits')) || [
+      { id: 1, name: 'Drink 2L Water', category: 'Health', streak: 3, completedDates: [getTodayString()], journal: '' }
+    ];
+    let currentFilter = 'All';
+
+    function getTodayString() {
+      return new Date().toISOString().split('T')[0];
+    }
+
+    function saveHabits() {
+      localStorage.setItem('streakify_habits', JSON.stringify(habits));
+      render();
+    }
+
+    function addHabit(e) {
+      e.preventDefault();
+      const input = document.getElementById('habitInput');
+      const category = document.getElementById('categoryInput').value;
+      if (!input.value.trim()) return;
+
+      habits.push({
+        id: Date.now(),
+        name: input.value.trim(),
+        category: category,
+        streak: 0,
+        completedDates: [],
+        journal: ''
+      });
+
+      input.value = '';
+      saveHabits();
+    }
+
+    function toggleHabit(id) {
+      const today = getTodayString();
+      const habit = habits.find(h => h.id === id);
+      if (!habit) return;
+
+      const isCompleted = habit.completedDates.includes(today);
+      if (isCompleted) {
+        habit.completedDates = habit.completedDates.filter(d => d !== today);
+        habit.streak = Math.max(0, habit.streak - 1);
+      } else {
+        habit.completedDates.push(today);
+        habit.streak += 1;
+        confetti({ particleCount: 60, spread: 60, origin: { y: 0.7 } });
+      }
+
+      saveHabits();
+    }
+
+    function deleteHabit(id) {
+      habits = habits.filter(h => h.id !== id);
+      saveHabits();
+    }
+
+    function updateJournal(id, note) {
+      const habit = habits.find(h => h.id === id);
+      if (habit) {
+        habit.journal = note;
+        localStorage.setItem('streakify_habits', JSON.stringify(habits));
+      }
+    }
+
+    function setFilter(cat) {
+      currentFilter = cat;
+      document.querySelectorAll('.filter-btn').forEach(btn => {
+        if (btn.innerText === cat) {
+          btn.className = 'filter-btn active-filter px-3 py-1.5 rounded-lg text-xs font-semibold bg-indigo-600 text-white';
+        } else {
+          btn.className = 'filter-btn px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 text-slate-400 hover:bg-slate-700';
         }
+      });
+      render();
+    }
 
-        // DOM Elements
-        const habitForm = document.getElementById('habit-form');
-        const habitInput = document.getElementById('habit-input');
-        const categoryInput = document.getElementById('category-input');
-        const habitList = document.getElementById('habit-list');
-        const habitCount = document.getElementById('habit-count');
-        const emptyState = document.getElementById('empty-state');
-        const progressBar = document.getElementById('progress-bar');
-        const progressText = document.getElementById('progress-text');
-        const dailyQuote = document.getElementById('daily-quote');
+    function render() {
+      const today = getTodayString();
+      const listEl = document.getElementById('habitList');
+      listEl.innerHTML = '';
 
-        // Motivational Quotes Array
-        const quotes = [
-            "\"Small steps every day lead to big changes.\"",
-            "\"You do not rise to the level of your goals. You fall to the level of your systems.\"",
-            "\"Consistency is what transforms average into excellence.\"",
-            "\"Success isn't always about greatness. It's about consistency.\""
-        ];
-        dailyQuote.textContent = quotes[Math.floor(Math.random() * quotes.length)];
+      const filtered = habits.filter(h => currentFilter === 'All' || h.category === currentFilter);
 
-        // State Management
-        let habits = JSON.parse(localStorage.getItem('habits')) || [];
-        let currentFilter = 'All';
-        let openNotes = {}; 
-        let wasAllCompleted = false;
+      // Update progress bar
+      const total = habits.length;
+      const completedToday = habits.filter(h => h.completedDates.includes(today)).length;
+      const pct = total === 0 ? 0 : Math.round((completedToday / total) * 100);
+      document.getElementById('progressBar').style.width = pct + '%';
+      document.getElementById('progressPercent').innerText = pct + '%';
 
-        // Save to LocalStorage and re-render
-        function saveAndRender() {
-            localStorage.setItem('habits', JSON.stringify(habits));
-            renderHabits();
-        }
+      if (filtered.length === 0) {
+        listEl.innerHTML = <p class="text-center text-slate-500 py-8 text-sm">No habits found. Add one above!</p>;
+        return;
+      }
 
-        // Set active category filter
-        window.setFilter = function(category) {
-            currentFilter = category;
-            document.querySelectorAll('.filter-btn').forEach(btn => {
-                if (btn.id === `filter-${category}`) {
-                    btn.className = "filter-btn px-3 py-1.5 rounded-lg font-medium transition bg-indigo-600 text-white";
-                } else {
-                    btn.className = "filter-btn px-3 py-1.5 rounded-lg font-medium transition bg-slate-900 text-slate-400 hover:text-white border border-slate-700";
-                }
-            });
-            renderHabits();
-        };
+      // Past 7 Days List for History Matrix
+      const last7Days = [];
+      for (let i = 6; i >= 0; i--) {
+        const d = new Date();
+        d.setDate(d.getDate() - i);
+        last7Days.push(d.toISOString().split('T')[0]);
+      }
 
-        // Get past 7 dates string array (YYYY-MM-DD)
-        function getLast7Days() {
-            const dates = [];
-            for (let i = 6; i >= 0; i--) {
-                const d = new Date();
-                d.setDate(d.getDate() - i);
-                dates.push(d.toISOString().split('T')[0]);
-            }
-            return dates;
-        }
+      filtered.forEach(habit => {
+        const isDone = habit.completedDates.includes(today);
 
-        function isDateCompleted(habit, dateStr) {
-            if (!habit.completedDates) {
-                if (habit.lastCompleted && habit.lastCompleted.startsWith(dateStr)) return true;
-                return false;
-            }
-            return habit.completedDates.includes(dateStr);
-        }
+        const card = document.createElement('div');
+        card.className = glass p-4 rounded-2xl transition ${isDone ? 'border-indigo-500/40 bg-indigo-950/20' : ''};
 
-        // Toggle Note input visibility
-        window.toggleNotePanel = function(index) {
-            openNotes[index] = !openNotes[index];
-            renderHabits();
-        };
+        card.innerHTML = `
+          <div class="flex items-center justify-between gap-3">
+            <div class="flex items-center gap-3">
+              <button onclick="toggleHabit(${habit.id})" class="w-7 h-7 rounded-lg border ${isDone ? 'bg-indigo-600 border-indigo-500 text-white' : 'border-slate-600 hover:border-indigo-400'} flex items-center justify-center transition">
+                ${isDone ? '<i class="fa-solid fa-check text-xs"></i>' : ''}
+              </button>
+              <div>
+                <h3 class="font-semibold text-sm ${isDone ? 'line-through text-slate-400' : 'text-slate-100'}">${habit.name}</h3>
+                <span class="text-[10px] px-2 py-0.5 rounded bg-slate-800 text-slate-400 font-medium">${habit.category}</span>
+              </div>
+            </div>
 
-        // Save note text
-        window.saveNote = function(index) {
-            const noteText = document.getElementById(`note-input-${index}`).value.trim();
-            habits[index].note = noteText;
-            saveAndRender();
-        };
+            <div class="flex items-center gap-3">
+              <div class="text-right">
+                <span class="text-xs font-bold text-amber-500 flex items-center gap-1">
+                  <i class="fa-solid fa-fire"></i> ${habit.streak}
+                </span>
+              </div>
+              <button onclick="deleteHabit(${habit.id})" class="text-slate-600 hover:text-rose-400 transition text-xs p-1">
+                <i class="fa-solid fa-trash"></i>
+              </button>
+            </div>
+          </div>
 
-        // Play satisfying sound effect
-        function playPopSound() {
-            try {
-                const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-                const osc = audioCtx.createOscillator();
-                const gain = audioCtx.createGain();
-                
-                osc.type = 'sine';
-                osc.frequency.setValueAtTime(587.33, audioCtx.currentTime); 
-                osc.frequency.exponentialRampToValueAtTime(880, audioCtx.currentTime + 0.12); 
-                
-                gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.15);
-                
-                osc.connect(gain);
-                gain.connect(audioCtx.destination);
-                
-                osc.start();
-                osc.stop(audioCtx.currentTime + 0.15);
-            } catch (e) {}
-        }
-
-        // Trigger Confetti Burst Celebration
-        function triggerConfetti() {
-            try {
-                confetti({
-                    particleCount: 100,
-                    spread: 70,
-                    origin: { y: 0.6 }
-                });
-            } catch (e) {}
-        }
-
-        // Render Habits and Progress Bar to DOM
-        function renderHabits() {
-            habitList.innerHTML = '';
-            
-            const todayStr = new Date().toISOString().split('T')[0];
-            
-            if (habits.length === 0) {
-                progressBar.style.width = '0%';
-                progressText.textContent = '0%';
-                wasAllCompleted = false;
-            } else {
-                let completedCount = habits.filter(h => isDateCompleted(h, todayStr)).length;
-                let percentage = Math.round((completedCount / habits.length) * 100);
-                progressBar.style.width = `${percentage}%`;
-                progressText.textContent = `${percentage}%`;
-
-                if (percentage === 100 && !wasAllCompleted) {
-                    triggerConfetti();
-                    wasAllCompleted = true;
-                } else if (percentage < 100) {
-                    wasAllCompleted = false;
-                }
-            }
-
-            const filteredHabits = currentFilter === 'All' 
-                ? habits 
-                : habits.filter(h => h.category === currentFilter);
-
-            habitCount.textContent = `${filteredHabits.length} habit${filteredHabits.length === 1 ? '' : 's'}`;
-
-            if (filteredHabits.length === 0) {
-                emptyState.classList.remove('hidden');
-                emptyState.classList.add('flex');
-                return;
-            } else {
-                emptyState.classList.remove('flex');
-                emptyState.classList.add('hidden');
-            }
-
-            const last7Days = getLast7Days();
-
-            filteredHabits.forEach((habit) => {
-                const originalIndex = habits.indexOf(habit);
-                const completedToday = isDateCompleted(habit, todayStr);
-                const isNoteOpen = openNotes[originalIndex] || false;
-
-                const catColors = {
-                    Health: 'bg-emerald-950 text-emerald-400 border-emerald-800/60',
-                    Work: 'bg-blue-950 text-blue-400 border-blue-800/60',
-                    Mind: 'bg-purple-950 text-purple-400 border-purple-800/60',
-                    Personal: 'bg-amber-950 text-amber-400 border-amber-800/60'
-                };
-                const badgeStyle = catColors[habit.category] || 'bg-slate-900 text-slate-300 border-slate-700';
-
-                const dotsHtml = last7Days.map(dateStr => {
-                    const isDone = isDateCompleted(habit, dateStr);
-                    const dayLabel = new Date(dateStr).toLocaleDateString('en-US', { weekday: 'narrow' });
-                    return `
-                        <div class="flex flex-col items-center gap-1" title="${dateStr}">
-                            <span class="text-[9px] text-slate-500 font-medium">${dayLabel}</span>
-                            <div class="w-3.5 h-3.5 rounded-full border transition ${
-                                isDone 
-                                    ? 'bg-emerald-500 border-emerald-400 shadow-sm shadow-emerald-500/50' 
-                                    : 'bg-slate-900 border-slate-700'
-                            }"></div>
-                        </div>
-                    `;
-                }).join('');
-
-                const li = document.createElement('li');
-                li.className = `flex flex-col p-4 rounded-xl border transition-all gap-3 ${
-                    completedToday 
-                        ? 'bg-emerald-950/20 border-emerald-800/50' 
-                        : 'bg-slate-900/60 border-slate-700/60 hover:border-slate-600'
-                }`;
-
-                li.innerHTML = `
-                    <div class="flex items-center justify-between">
-                        <div class="flex items-center gap-3 flex-1 min-w-0 mr-3">
-                            <button onclick="toggleComplete(${originalIndex})" class="w-7 h-7 rounded-lg flex items-center justify-center border transition ${
-                                completedToday 
-                                    ? 'bg-emerald-600 border-emerald-500 text-white shadow-md shadow-emerald-600/30' 
-                                    : 'border-slate-600 hover:border-indigo-500 text-transparent'
-                            }">
-                                <i class="fa-solid fa-check text-xs ${completedToday ? 'opacity-100' : 'opacity-0'}"></i>
-                            </button>
-                            <div class="flex flex-col min-w-0">
-                                <span class="text-sm font-medium truncate ${completedToday ? 'line-through text-slate-400' : 'text-slate-200'}">
-                                    ${escapeHtml(habit.name)}
-                                </span>
-                                <span class="text-[10px] px-2 py-0.5 rounded-md border w-fit font-medium mt-0.5 ${badgeStyle}">
-                                    ${habit.category || 'Personal'}
-                                </span>
-                            </div>
-                        </div>
-                        
-                        <div class="flex items-center gap-2">
-                            <button onclick="toggleNotePanel(${originalIndex})" class="p-1.5 rounded-lg border text-xs transition ${
-                                habit.note 
-                                    ? 'bg-indigo-950/60 border-indigo-700 text-indigo-400' 
-                                    : 'border-slate-700 text-slate-500 hover:text-slate-300'
-                            }" title="Daily Journal Note">
-                                <i class="fa-solid fa-pen-to-square"></i>
-                            </button>
-
-                            <div class="flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full bg-slate-800 border border-slate-700 text-amber-400" title="Current Streak">
-                                <i class="fa-solid fa-fire"></i>
-                                <span>${habit.streak || 0}</span>
-                            </div>
-                            <button onclick="deleteHabit(${originalIndex})" class="text-slate-500 hover:text-rose-400 p-1 transition" title="Delete habit">
-                                <i class="fa-solid fa-trash-can text-sm"></i>
-                            </button>
-                        </div>
+          <!-- 7-Day History Matrix -->
+          <div class="mt-4 pt-3 border-t border-slate-800/80 flex justify-between items-center">
+            <span class="text-[11px] text-slate-500">7-Day History:</span>
+            <div class="flex gap-1.5">
+              ${last7Days.map(day => {
+                const checked = habit.completedDates.includes(day);
+                const dayLetter = new Date(day).toLocaleDateString('en-US', { weekday: 'narrow' });
+                return `
+                  <div class="flex flex-col items-center gap-1">
+                    <div class="w-5 h-5 rounded-md flex items-center justify-center text-[10px] font-bold ${checked ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-600'}">
+                      ${checked ? '✓' : ''}
                     </div>
-
-                    <!-- Collapsible Journal Note Section -->
-                    <div class="${isNoteOpen ? 'flex' : 'hidden'} flex-col gap-2 bg-slate-950/60 p-3 rounded-lg border border-slate-800">
-                        <label class="text-[10px] uppercase font-semibold text-slate-400 flex justify-between">
-                            <span>Journal Log / Note</span>
-                            ${habit.note ? '<span class="text-emerald-400 font-normal">Saved</span>' : ''}
-                        </label>
-                        <div class="flex gap-2">
-                            <input 
-                                type="text" 
-                                id="note-input-${originalIndex}" 
-                                value="${escapeHtml(habit.note || '')}"
-                                placeholder="Add daily reflection or details..." 
-                                class="flex-1 bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-slate-200 placeholder-slate-600 focus:outline-none focus:border-indigo-500"
-                            />
-                            <button onclick="saveNote(${originalIndex})" class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs px-3 py-1.5 rounded-lg transition font-medium">
-                                Save
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Weekly History Dots View -->
-                    <div class="flex justify-between items-center bg-slate-950/40 px-3 py-2 rounded-lg border border-slate-800/60">
-                        <span class="text-[10px] text-slate-400 uppercase tracking-wider font-semibold">Last 7 Days</span>
-                        <div class="flex gap-2.5 items-center">
-                            ${dotsHtml}
-                        </div>
-                    </div>
+                    <span class="text-[9px] text-slate-500">${dayLetter}</span>
+                  </div>
                 `;
-                habitList.appendChild(li);
-            });
+              }).join('')}
+            </div>
+          </div>
+
+          <!-- Journal Note Area -->
+          <div class="mt-3">
+            <input type="text" placeholder="Add daily note or reflections..." 
+              value="${habit.journal || ''}" 
+              onchange="updateJournal(${habit.id}, this.value)"
+              class="w-full bg-slate-900/40 border border-slate-800 rounded-lg px-3 py-1.5 text-xs text-slate-300 placeholder-slate-600 focus:outline-none focus:border-slate-700">
+          </div>
+        `;
+
+        listEl.appendChild(card);
+      });
+    }
+
+    function exportData() {
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(habits));
+      const dlAnchor = document.createElement('a');
+      dlAnchor.setAttribute("href", dataStr);
+      dlAnchor.setAttribute("download", "streakify_backup.json");
+      document.body.appendChild(dlAnchor);
+      dlAnchor.click();
+      dlAnchor.remove();
+    }
+
+    function importData(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          const imported = JSON.parse(e.target.result);
+          if (Array.isArray(imported)) {
+            habits = imported;
+            saveHabits();
+          }
+        } catch (err) {
+          alert('Invalid JSON file.');
         }
+      };
+      reader.readAsText(file);
+    }
 
-        // Add Habit
-        habitForm.addEventListener('submit', (e) => {
-            e.preventDefault();
-            const habitName = habitInput.value.trim();
-            const habitCategory = categoryInput.value;
-            if (!habitName) return;
-
-            habits.push({
-                name: habitName,
-                category: habitCategory,
-                streak: 0,
-                completedDates: [],
-                note: ''
-            });
-
-            habitInput.value = '';
-            saveAndRender();
-        });
-
-        // Toggle Completion & Streak Counter
-        window.toggleComplete = function(index) {
-            const habit = habits[index];
-            if (!habit.completedDates) habit.completedDates = [];
-
-            const todayStr = new Date().toISOString().split('T')[0];
-            const dateIndex = habit.completedDates.indexOf(todayStr);
-
-            if (dateIndex > -1) {
-                habit.completedDates.splice(dateIndex, 1);
-                habit.streak = Math.max(0, habit.streak - 1);
-            } else {
-                habit.completedDates.push(todayStr);
-                habit.streak += 1;
-                playPopSound();
-            }
-
-            saveAndRender();
-        };
-
-        // Delete Habit
-        window.deleteHabit = function(index) {
-            habits.splice(index, 1);
-            saveAndRender();
-        };
-
-        // Export Data
-        window.exportData = function() {
-            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(habits, null, 2));
-            const downloadAnchor = document.createElement('a');
-            downloadAnchor.setAttribute("href", dataStr);
-            downloadAnchor.setAttribute("download", "streakify_backup.json");
-            document.body.appendChild(downloadAnchor);
-            downloadAnchor.click();
-            downloadAnchor.remove();
-        };
-
-        // Import Data
-        window.importData = function(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                try {
-                    const parsed = JSON.parse(e.target.result);
-                    if (Array.isArray(parsed)) {
-                        habits = parsed;
-                        saveAndRender();
-                        alert("Habits successfully imported!");
-                    } else {
-                        alert("Invalid backup file format.");
-                    }
-                } catch (err) {
-                    alert("Error reading backup file.");
-                }
-            };
-            reader.readAsText(file);
-        };
-
-        // Utility to prevent XSS
-        function escapeHtml(str) {
-            return str.replace(/&/g, "&").replace(/</g, "<").replace(/>/g, ">").replace(/"/g, """).replace(/'/g, "'");
-        }
-
-        // Initial render on load
-        renderHabits();
-    </script>
+    render();
+  </script>
 </body>
 </html>
